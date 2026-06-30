@@ -13,4 +13,37 @@ const calculateBmi = (height: number, weight: number): string => {
   return 'Obese (Class III)';
 };
 
-console.log(calculateBmi(180, 74));
+interface BmiValues {
+  height: number;
+  weight: number;
+}
+
+const parseBmi = (args: string[]): BmiValues => {
+  if (args.length < 4) throw new Error('Not enough values');
+  if (args.length > 4) throw new Error('Too many values');
+
+  const height = Number(args[2]);
+  const weight = Number(args[3]);
+
+  if (isNaN(height) || isNaN(weight)) {
+    throw new Error('Provided values were not numbers');
+  }
+
+  return {
+    height,
+    weight
+  };
+};
+
+try {
+  const { height, weight } = parseBmi(process.argv);
+  console.log(calculateBmi(height, weight));
+} catch (error: unknown) {
+  let errorMessage = 'Something went wrong.';
+
+  if (error instanceof Error) {
+    errorMessage += ' Error: ' + error.message;
+  }
+
+  console.log(errorMessage);
+}

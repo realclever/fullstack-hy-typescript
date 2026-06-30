@@ -42,4 +42,35 @@ const calculateExercises = (dailyExerciseHours: number[], target: number): Exerc
   };
 };
 
-console.log(calculateExercises([3, 0, 2, 4.5, 0, 3, 1], 2));
+const parseExercise = (
+  args: string[]
+): { target: number; dailyExerciseHours: number[] } => {
+  if (args.length < 4) {
+    throw new Error('Not enough values"');
+  }
+
+  const target = Number(args[2]);
+  const dailyExerciseHours = args.slice(3).map(hours => Number(hours));
+
+  if (isNaN(target) || dailyExerciseHours.some(hours => isNaN(hours))) {
+    throw new Error('Insert numbers only');
+  }
+
+  return {
+    target,
+    dailyExerciseHours
+  };
+};
+
+try {
+  const { target, dailyExerciseHours } = parseExercise(process.argv);
+  console.log(calculateExercises(dailyExerciseHours, target));
+} catch (error: unknown) {
+  let errorMessage = 'Something went wrong.';
+
+  if (error instanceof Error) {
+    errorMessage += ' Error: ' + error.message;
+  }
+
+  console.log(errorMessage);
+}
