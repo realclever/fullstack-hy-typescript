@@ -11,13 +11,18 @@
     "calculateBmi": "tsc && node bmiCalculator.ts",
     "calculateExercises": "tsc && node exerciseCalculator.ts",
     "start": "node index.ts",
-    "dev": "concurrently \"tsc --watch\" \"node --watch index.ts\""
+    "dev": "concurrently \"tsc --watch\" \"node --watch index.ts\"",
+    "lint": "eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/express": "^5.0.6",
     "@types/node": "^26.0.1",
     "concurrently": "^10.0.3",
-    "typescript": "^6.0.3"
+    "eslint": "^9.39.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.62.1"
   },
   "dependencies": {
     "express": "^5.2.1"
