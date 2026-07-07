@@ -1,0 +1,64 @@
+### Get all patients
+GET http://localhost:3001/api/patients
+
+### Pong
+GET http://localhost:3001/api/ping
+
+### Add a valid patient
+POST http://localhost:3001/api/patients
+Content-Type: application/json
+
+{
+  "name": "Coffee Cat",
+  "dateOfBirth": "2020-01-01",
+  "ssn": "010120-123A",
+  "gender": "other",
+  "occupation": "Professional coffee supervisor"
+}
+
+### Invalid gender
+POST http://localhost:3001/api/patients
+Content-Type: application/json
+
+{
+  "name": "Dragon Cat",
+  "dateOfBirth": "2020-01-01",
+  "ssn": "010120-123A",
+  "gender": "dragon",
+  "occupation": "Castle inspector"
+}
+
+### Missing occupation
+POST http://localhost:3001/api/patients
+Content-Type: application/json
+
+{
+  "name": "Incomplete Cat",
+  "dateOfBirth": "2020-01-01",
+  "ssn": "010120-123A",
+  "gender": "other"
+}
+
+### Invalid date of birth
+POST http://localhost:3001/api/patients
+Content-Type: application/json
+
+{
+  "name": "Time-Travelling Cat",
+  "dateOfBirth": "not-a-date",
+  "ssn": "010120-123A",
+  "gender": "other",
+  "occupation": "Chronologist"
+}
+
+### Empty name
+POST http://localhost:3001/api/patients
+Content-Type: application/json
+
+{
+  "name": "",
+  "dateOfBirth": "2020-01-01",
+  "ssn": "010120-123A",
+  "gender": "other",
+  "occupation": "Professional napper"
+}
