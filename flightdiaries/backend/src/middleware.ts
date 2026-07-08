@@ -17,7 +17,7 @@ export const newDiaryParser = (
 
 export const errorMiddleware = (
   error: unknown,
-  req: Request,
+  req: Request<unknown, unknown, unknown>,
   res: Response,
   next: NextFunction,
 ) => {
@@ -26,7 +26,15 @@ export const errorMiddleware = (
     const field = firstIssue?.path[0];
 
     if (typeof field === "string") {
-      const invalidValue: unknown = req.body[field];
+      let invalidValue: unknown;
+
+      if (
+        typeof req.body === "object" &&
+        req.body !== null &&
+        field in req.body
+      ) {
+        invalidValue = (req.body as Record<string, unknown>)[field];
+      }
 
       res.status(400).send({
         error: `Incorrect ${field}: ${String(invalidValue)}`,

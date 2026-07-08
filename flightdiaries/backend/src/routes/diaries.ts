@@ -1,16 +1,16 @@
-import express, { type Request, type Response } from 'express';
-import diaryService from '../services/diaryService.ts';
-import { type DiaryEntry, type NewDiaryEntry, type NonSensitiveDiaryEntry } from '../types.ts';
-import { newDiaryParser, errorMiddleware } from '../middleware.ts';
+import express, { type Request, type Response } from "express";
+import diaryService from "../services/diaryService.ts";
+import { type DiaryEntry, type NewDiaryEntry } from "../types.ts";
+import { newDiaryParser, errorMiddleware } from "../middleware.ts";
 
 const router = express.Router();
 
-router.get('/', (_req, res: Response<NonSensitiveDiaryEntry[]>) => {
-  const data = diaryService.getNonSensitiveEntries();
+router.get("/", (_req, res: Response<DiaryEntry[]>) => {
+  const data = diaryService.getEntries();
   res.send(data);
 });
 
-router.get('/:id', (req, res) => {
+router.get("/:id", (req, res) => {
   const diary = diaryService.findById(Number(req.params.id));
 
   if (diary) {
@@ -20,10 +20,17 @@ router.get('/:id', (req, res) => {
   }
 });
 
-router.post('/', newDiaryParser, (req: Request<unknown, unknown, NewDiaryEntry>, res: Response<DiaryEntry>) => {  
-  const addedEntry = diaryService.addDiary(req.body);  
-  res.json(addedEntry);
-});
+router.post(
+  "/",
+  newDiaryParser,
+  (
+    req: Request<unknown, unknown, NewDiaryEntry>,
+    res: Response<DiaryEntry>,
+  ) => {
+    const addedEntry = diaryService.addDiary(req.body);
+    res.json(addedEntry);
+  },
+);
 
 router.use(errorMiddleware);
 

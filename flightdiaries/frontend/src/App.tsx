@@ -1,14 +1,19 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import diaryService from "./services";
-import type { DiaryEntry, NewDiaryEntry, Visibility, Weather } from "./types";
+import { Visibility, Weather } from "./types";
+import type { DiaryEntry, NewDiaryEntry } from "./types";
+
+const weatherOptions = Object.values(Weather);
+const visibilityOptions = Object.values(Visibility);
 
 const App = () => {
   const [diaries, setDiaries] = useState<DiaryEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+
   const [date, setDate] = useState("");
-  const [weather, setWeather] = useState("");
-  const [visibility, setVisibility] = useState("");
+  const [weather, setWeather] = useState<Weather | "">("");
+  const [visibility, setVisibility] = useState<Visibility | "">("");
   const [comment, setComment] = useState("");
 
   useEffect(() => {
@@ -20,10 +25,15 @@ const App = () => {
   const addDiary = (event: React.SyntheticEvent) => {
     event.preventDefault();
 
+    if (!date || !weather || !visibility) {
+      setError("Date, weather and visibility are required");
+      return;
+    }
+
     const newDiary: NewDiaryEntry = {
       date,
-      weather: weather as Weather,
-      visibility: visibility as Visibility,
+      weather,
+      visibility,
       comment,
     };
 
@@ -69,25 +79,45 @@ const App = () => {
         <div>
           date{" "}
           <input
+            type="date"
             value={date}
             onChange={(event) => setDate(event.target.value)}
+            required
           />
         </div>
 
         <div>
           weather{" "}
-          <input
-            value={weather}
-            onChange={(event) => setWeather(event.target.value)}
-          />
+          {weatherOptions.map((option) => (
+            <label key={option}>
+              <input
+                type="radio"
+                name="weather"
+                value={option}
+                checked={weather === option}
+                onChange={() => setWeather(option)}
+                required
+              />
+              {option}
+            </label>
+          ))}
         </div>
 
         <div>
           visibility{" "}
-          <input
-            value={visibility}
-            onChange={(event) => setVisibility(event.target.value)}
-          />
+          {visibilityOptions.map((option) => (
+            <label key={option}>
+              <input
+                type="radio"
+                name="visibility"
+                value={option}
+                checked={visibility === option}
+                onChange={() => setVisibility(option)}
+                required
+              />
+              {option}
+            </label>
+          ))}
         </div>
 
         <div>
@@ -108,6 +138,7 @@ const App = () => {
           <h3>{diary.date}</h3>
           <div>visibility: {diary.visibility}</div>
           <div>weather: {diary.weather}</div>
+          {diary.comment && <div>comment: {diary.comment}</div>}
         </div>
       ))}
     </div>
