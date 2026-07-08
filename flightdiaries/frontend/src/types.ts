@@ -23,3 +23,7 @@ export interface DiaryEntry {
   weather: Weather;
   visibility: Visibility;
 }
+
+export type NewDiaryEntry = Omit<DiaryEntry, "id"> & {
+  comment?: string;
+};
