@@ -1,13 +1,14 @@
+import axios from "axios";
 import { useEffect, useState } from "react";
 import diaryService from "./services";
 import type { DiaryEntry, NewDiaryEntry, Visibility, Weather } from "./types";
 
 const App = () => {
   const [diaries, setDiaries] = useState<DiaryEntry[]>([]);
-
+  const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState("");
-  const [weather, setWeather] = useState<Weather>("sunny");
-  const [visibility, setVisibility] = useState<Visibility>("great");
+  const [weather, setWeather] = useState("");
+  const [visibility, setVisibility] = useState("");
   const [comment, setComment] = useState("");
 
   useEffect(() => {
@@ -21,19 +22,39 @@ const App = () => {
 
     const newDiary: NewDiaryEntry = {
       date,
-      weather,
-      visibility,
+      weather: weather as Weather,
+      visibility: visibility as Visibility,
       comment,
     };
 
-    diaryService.create(newDiary).then((returnedDiary) => {
-      setDiaries(diaries.concat(returnedDiary));
+    diaryService
+      .create(newDiary)
+      .then((returnedDiary) => {
+        setDiaries(diaries.concat(returnedDiary));
 
-      setDate("");
-      setWeather("sunny");
-      setVisibility("great");
-      setComment("");
-    });
+        setDate("");
+        setWeather("");
+        setVisibility("");
+        setComment("");
+        setError(null);
+      })
+      .catch((error: unknown) => {
+        if (axios.isAxiosError(error)) {
+          const responseData: unknown = error.response?.data;
+
+          if (
+            typeof responseData === "object" &&
+            responseData !== null &&
+            "error" in responseData &&
+            typeof responseData.error === "string"
+          ) {
+            setError(responseData.error);
+            return;
+          }
+        }
+
+        setError("Failed to create diary entry");
+      });
   };
 
   return (
@@ -41,6 +62,8 @@ const App = () => {
       <h1>Flight Diaries</h1>
 
       <h2>Add new entry</h2>
+
+      {error && <div style={{ color: "red" }}>Error: {error}</div>}
 
       <form onSubmit={addDiary}>
         <div>
@@ -55,7 +78,7 @@ const App = () => {
           weather{" "}
           <input
             value={weather}
-            onChange={(event) => setWeather(event.target.value as Weather)}
+            onChange={(event) => setWeather(event.target.value)}
           />
         </div>
 
@@ -63,9 +86,7 @@ const App = () => {
           visibility{" "}
           <input
             value={visibility}
-            onChange={(event) =>
-              setVisibility(event.target.value as Visibility)
-            }
+            onChange={(event) => setVisibility(event.target.value)}
           />
         </div>
 
