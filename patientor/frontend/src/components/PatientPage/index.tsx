@@ -10,8 +10,12 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import WorkIcon from "@mui/icons-material/Work";
+import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 
-import { Diagnosis, Entry, Gender, Patient } from "../../types";
+import type { Diagnosis, Entry, Patient } from "../../types";
+import { Gender, HealthCheckRating } from "../../types";
 import patientService from "../../services/patients";
 
 const genderSymbol = (gender: Gender): string => {
@@ -27,11 +31,109 @@ const genderSymbol = (gender: Gender): string => {
   }
 };
 
+const assertNever = (value: never): never => {
+  throw new Error(`Unhandled entry type: ${JSON.stringify(value)}`);
+};
+
 const getDiagnosisName = (
   code: string,
   diagnoses: Diagnosis[],
 ): string | undefined => {
   return diagnoses.find((diagnosis) => diagnosis.code === code)?.name;
+};
+
+const healthCheckRatingEmoji = (rating: HealthCheckRating): string => {
+  switch (rating) {
+    case HealthCheckRating.Healthy:
+      return "😎";
+    case HealthCheckRating.LowRisk:
+      return "🙂";
+    case HealthCheckRating.HighRisk:
+      return "😬";
+    case HealthCheckRating.CriticalRisk:
+      return "💀";
+    default:
+      return assertNever(rating);
+  }
+};
+
+const EntryHeader = ({ entry }: { entry: Entry }) => {
+  switch (entry.type) {
+    case "Hospital":
+      return (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography sx={{ fontWeight: 800 }}>{entry.date}</Typography>
+          <LocalHospitalIcon fontSize="small" />
+          <Typography color="text.secondary">Hospital</Typography>
+        </Stack>
+      );
+
+    case "OccupationalHealthcare":
+      return (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography sx={{ fontWeight: 800 }}>{entry.date}</Typography>
+          <WorkIcon fontSize="small" />
+          <Typography color="text.secondary">
+            Occupational healthcare · {entry.employerName}
+          </Typography>
+        </Stack>
+      );
+
+    case "HealthCheck":
+      return (
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography sx={{ fontWeight: 800 }}>{entry.date}</Typography>
+          <MedicalServicesIcon fontSize="small" />
+          <Typography color="text.secondary">Health check</Typography>
+        </Stack>
+      );
+
+    default:
+      return assertNever(entry);
+  }
+};
+
+const EntryTypeDetails = ({ entry }: { entry: Entry }) => {
+  switch (entry.type) {
+    case "Hospital":
+      return (
+        <Box sx={{ marginTop: 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            Discharge
+          </Typography>
+          <Typography>
+            {entry.discharge.date}: {entry.discharge.criteria}
+          </Typography>
+        </Box>
+      );
+
+    case "OccupationalHealthcare":
+      return entry.sickLeave ? (
+        <Box sx={{ marginTop: 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            Sick leave
+          </Typography>
+          <Typography>
+            {entry.sickLeave.startDate} – {entry.sickLeave.endDate}
+          </Typography>
+        </Box>
+      ) : null;
+
+    case "HealthCheck":
+      return (
+        <Box sx={{ marginTop: 2 }}>
+          <Typography variant="caption" color="text.secondary">
+            Health check rating:
+          </Typography>
+          <Typography>
+            {healthCheckRatingEmoji(entry.healthCheckRating)}
+          </Typography>
+        </Box>
+      );
+
+    default:
+      return assertNever(entry);
+  }
 };
 
 const EntryDetails = ({
@@ -52,7 +154,7 @@ const EntryDetails = ({
       }}
     >
       <CardContent>
-        <Typography sx={{ fontWeight: 800 }}>{entry.date}</Typography>
+        <EntryHeader entry={entry} />
 
         <Typography sx={{ marginTop: 0.5, fontStyle: "italic" }}>
           {entry.description}
@@ -69,6 +171,12 @@ const EntryDetails = ({
             ))}
           </Box>
         )}
+
+        <EntryTypeDetails entry={entry} />
+
+        <Typography sx={{ marginTop: 2 }} color="text.secondary">
+          diagnose by {entry.specialist}
+        </Typography>
       </CardContent>
     </Card>
   );
