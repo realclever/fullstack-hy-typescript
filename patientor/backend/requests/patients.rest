@@ -62,3 +62,97 @@ Content-Type: application/json
   "gender": "other",
   "occupation": "Professional napper"
 }
+
+### Get one patient
+GET http://localhost:3001/api/patients/d2773822-f723-11e9-8f0b-362b9e155667
+
+### Add valid HealthCheck entry
+POST http://localhost:3001/api/patients/d2773822-f723-11e9-8f0b-362b9e155667/entries
+Content-Type: application/json
+
+{
+  "type": "HealthCheck",
+  "description": "Coffee-powered post-dinner checkup.",
+  "date": "2026-07-09",
+  "specialist": "MD House",
+  "healthCheckRating": 0,
+  "diagnosisCodes": ["Z00.0"]
+}
+
+### Add valid Hospital entry
+POST http://localhost:3001/api/patients/d2773336-f723-11e9-8f0b-362b9e155667/entries
+Content-Type: application/json
+
+{
+  "type": "Hospital",
+  "description": "Patient injured thumb while dramatically saving the day.",
+  "date": "2026-07-09",
+  "specialist": "MD House",
+  "diagnosisCodes": ["S62.5"],
+  "discharge": {
+    "date": "2026-07-16",
+    "criteria": "It's thumb is again."
+  }
+}
+
+### Add valid OccupationalHealthcare entry
+POST http://localhost:3001/api/patients/d2773598-f723-11e9-8f0b-362b9e155667/entries
+Content-Type: application/json
+
+{
+  "type": "OccupationalHealthcare",
+  "description": "Workplace checkup after suspiciously intense police activity.",
+  "date": "2026-07-09",
+  "specialist": "MD House",
+  "employerName": "LAPD",
+  "diagnosisCodes": ["Z56.5"],
+  "sickLeave": {
+    "startDate": "2026-07-10",
+    "endDate": "2026-07-12"
+  }
+}
+
+### Invalid HealthCheck entry missing healthCheckRating
+POST http://localhost:3001/api/patients/d2773822-f723-11e9-8f0b-362b9e155667/entries
+Content-Type: application/json
+
+{
+  "type": "HealthCheck",
+  "description": "Missing rating should fail.",
+  "date": "2026-07-09",
+  "specialist": "MD House"
+}
+
+### Invalid Hospital entry missing discharge
+POST http://localhost:3001/api/patients/d2773336-f723-11e9-8f0b-362b9e155667/entries
+Content-Type: application/json
+
+{
+  "type": "Hospital",
+  "description": "Missing discharge should fail.",
+  "date": "2026-07-09",
+  "specialist": "MD House"
+}
+
+### Invalid OccupationalHealthcare entry missing employerName
+POST http://localhost:3001/api/patients/d2773598-f723-11e9-8f0b-362b9e155667/entries
+Content-Type: application/json
+
+{
+  "type": "OccupationalHealthcare",
+  "description": "Missing employer should fail.",
+  "date": "2026-07-09",
+  "specialist": "MD House"
+}
+
+### Add entry to non-existing patient
+POST http://localhost:3001/api/patients/not-a-real-id/entries
+Content-Type: application/json
+
+{
+  "type": "HealthCheck",
+  "description": "This patient does not exist.",
+  "date": "2026-07-09",
+  "specialist": "MD House",
+  "healthCheckRating": 0
+}
