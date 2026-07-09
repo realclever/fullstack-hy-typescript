@@ -11,17 +11,19 @@ import { Button, Divider, Container, Typography } from "@mui/material";
 import PatientPage from "./components/PatientPage";
 
 import { apiBaseUrl } from "./constants";
-import { Patient } from "./types";
+import { Diagnosis, Patient } from "./types";
 
 import patientService from "./services/patients";
+import diagnosisService from "./services/diagnoses";
 import PatientListPage from "./components/PatientListPage";
 
 interface AppContentProps {
   patients: Patient[];
   setPatients: React.Dispatch<React.SetStateAction<Patient[]>>;
+  diagnoses: Diagnosis[];
 }
 
-const AppContent = ({ patients, setPatients }: AppContentProps) => {
+const AppContent = ({ patients, setPatients, diagnoses }: AppContentProps) => {
   const location = useLocation();
 
   return (
@@ -29,7 +31,6 @@ const AppContent = ({ patients, setPatients }: AppContentProps) => {
       <Typography variant="h3" sx={{ marginBottom: "0.5em" }}>
         Patientor
       </Typography>
-
       {location.pathname !== "/" && (
         <Button
           component={Link}
@@ -54,9 +55,7 @@ const AppContent = ({ patients, setPatients }: AppContentProps) => {
           Home
         </Button>
       )}
-
       <Divider sx={{ marginY: 2 }} />
-
       <Routes>
         <Route
           path="/"
@@ -64,7 +63,10 @@ const AppContent = ({ patients, setPatients }: AppContentProps) => {
             <PatientListPage patients={patients} setPatients={setPatients} />
           }
         />
-        <Route path="/patients/:id" element={<PatientPage />} />
+        <Route
+          path="/patients/:id"
+          element={<PatientPage diagnoses={diagnoses} />}
+        />
       </Routes>
     </Container>
   );
@@ -72,6 +74,7 @@ const AppContent = ({ patients, setPatients }: AppContentProps) => {
 
 const App = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [diagnoses, setDiagnoses] = useState<Diagnosis[]>([]);
 
   useEffect(() => {
     void axios.get<void>(`${apiBaseUrl}/ping`);
@@ -80,14 +83,22 @@ const App = () => {
       const patients = await patientService.getAll();
       setPatients(patients);
     };
+    const fetchDiagnoses = async () => {
+      const diagnoses = await diagnosisService.getAll();
+      setDiagnoses(diagnoses);
+    };
 
     void fetchPatientList();
+    void fetchDiagnoses();
   }, []);
-
   return (
     <div className="App">
       <Router>
-        <AppContent patients={patients} setPatients={setPatients} />
+        <AppContent
+          patients={patients}
+          setPatients={setPatients}
+          diagnoses={diagnoses}
+        />
       </Router>
     </div>
   );

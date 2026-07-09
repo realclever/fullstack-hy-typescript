@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Entry, Gender, Patient } from "../../types";
+import { Diagnosis, Entry, Gender, Patient } from "../../types";
 import patientService from "../../services/patients";
 
 const genderSymbol = (gender: Gender): string => {
@@ -27,7 +27,20 @@ const genderSymbol = (gender: Gender): string => {
   }
 };
 
-const EntryDetails = ({ entry }: { entry: Entry }) => {
+const getDiagnosisName = (
+  code: string,
+  diagnoses: Diagnosis[],
+): string | undefined => {
+  return diagnoses.find((diagnosis) => diagnosis.code === code)?.name;
+};
+
+const EntryDetails = ({
+  entry,
+  diagnoses,
+}: {
+  entry: Entry;
+  diagnoses: Diagnosis[];
+}) => {
   return (
     <Card
       elevation={0}
@@ -41,13 +54,17 @@ const EntryDetails = ({ entry }: { entry: Entry }) => {
       <CardContent>
         <Typography sx={{ fontWeight: 800 }}>{entry.date}</Typography>
 
-        <Typography sx={{ marginTop: 0.5 }}>{entry.description}</Typography>
+        <Typography sx={{ marginTop: 0.5, fontStyle: "italic" }}>
+          {entry.description}
+        </Typography>
 
         {entry.diagnosisCodes && entry.diagnosisCodes.length > 0 && (
           <Box component="ul" sx={{ marginBottom: 0 }}>
             {entry.diagnosisCodes.map((code) => (
               <li key={code}>
-                <Typography component="span">{code}</Typography>
+                <Typography component="span">
+                  {code} {getDiagnosisName(code, diagnoses)}
+                </Typography>
               </li>
             ))}
           </Box>
@@ -57,7 +74,11 @@ const EntryDetails = ({ entry }: { entry: Entry }) => {
   );
 };
 
-const PatientPage = () => {
+interface Props {
+  diagnoses: Diagnosis[];
+}
+
+const PatientPage = ({ diagnoses }: Props) => {
   const { id } = useParams();
   const [patient, setPatient] = useState<Patient | null>(null);
 
@@ -174,7 +195,11 @@ const PatientPage = () => {
         <Stack spacing={2}>
           {patient.entries && patient.entries.length > 0 ? (
             patient.entries.map((entry) => (
-              <EntryDetails key={entry.id} entry={entry} />
+              <EntryDetails
+                key={entry.id}
+                entry={entry}
+                diagnoses={diagnoses}
+              />
             ))
           ) : (
             <Typography color="text.secondary">No entries yet.</Typography>
