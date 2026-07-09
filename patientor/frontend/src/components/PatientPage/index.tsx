@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Gender, Patient } from "../../types";
+import { Entry, Gender, Patient } from "../../types";
 import patientService from "../../services/patients";
 
 const genderSymbol = (gender: Gender): string => {
@@ -25,6 +25,36 @@ const genderSymbol = (gender: Gender): string => {
     default:
       return "";
   }
+};
+
+const EntryDetails = ({ entry }: { entry: Entry }) => {
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: "1px solid",
+        borderColor: "divider",
+        backgroundColor: "rgba(255, 255, 255, 0.72)",
+      }}
+    >
+      <CardContent>
+        <Typography sx={{ fontWeight: 800 }}>{entry.date}</Typography>
+
+        <Typography sx={{ marginTop: 0.5 }}>{entry.description}</Typography>
+
+        {entry.diagnosisCodes && entry.diagnosisCodes.length > 0 && (
+          <Box component="ul" sx={{ marginBottom: 0 }}>
+            {entry.diagnosisCodes.map((code) => (
+              <li key={code}>
+                <Typography component="span">{code}</Typography>
+              </li>
+            ))}
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
 
 const PatientPage = () => {
@@ -135,6 +165,22 @@ const PatientPage = () => {
           </Stack>
         </CardContent>
       </Card>
+
+      <Box sx={{ marginTop: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, marginBottom: 2 }}>
+          entries
+        </Typography>
+
+        <Stack spacing={2}>
+          {patient.entries && patient.entries.length > 0 ? (
+            patient.entries.map((entry) => (
+              <EntryDetails key={entry.id} entry={entry} />
+            ))
+          ) : (
+            <Typography color="text.secondary">No entries yet.</Typography>
+          )}
+        </Stack>
+      </Box>
     </Box>
   );
 };
