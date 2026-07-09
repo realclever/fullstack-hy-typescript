@@ -1,20 +1,24 @@
-import { useEffect, useState } from "react";
+import axios from "axios";
+import { useEffect, useState, type FormEvent } from "react";
 import { useParams } from "react-router-dom";
 import {
+  Alert,
   Box,
+  Button,
   Card,
   CardContent,
   Chip,
   CircularProgress,
   Divider,
   Stack,
+  TextField,
   Typography,
 } from "@mui/material";
 import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import WorkIcon from "@mui/icons-material/Work";
 import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 
-import type { Diagnosis, Entry, Patient } from "../../types";
+import type { Diagnosis, Entry, NewEntry, Patient } from "../../types";
 import { Gender, HealthCheckRating } from "../../types";
 import patientService from "../../services/patients";
 
@@ -182,6 +186,161 @@ const EntryDetails = ({
   );
 };
 
+interface AddHealthCheckEntryFormProps {
+  error?: string;
+  onCancel: () => void;
+  onSubmit: (entry: NewEntry) => Promise<void>;
+}
+
+const AddHealthCheckEntryForm = ({
+  error,
+  onCancel,
+  onSubmit,
+}: AddHealthCheckEntryFormProps) => {
+  const [date, setDate] = useState("");
+  const [description, setDescription] = useState("");
+  const [specialist, setSpecialist] = useState("");
+  const [healthCheckRating, setHealthCheckRating] = useState("");
+  const [diagnosisCodes, setDiagnosisCodes] = useState("");
+
+  const resetForm = () => {
+    setDate("");
+    setDescription("");
+    setSpecialist("");
+    setHealthCheckRating("");
+    setDiagnosisCodes("");
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    onCancel();
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const codes = diagnosisCodes
+      .split(",")
+      .map((code) => code.trim())
+      .filter((code) => code.length > 0);
+
+    const newEntry: NewEntry = {
+      type: "HealthCheck",
+      date,
+      description,
+      specialist,
+      healthCheckRating: Number(healthCheckRating) as HealthCheckRating,
+      ...(codes.length > 0 ? { diagnosisCodes: codes } : {}),
+    };
+
+    try {
+      await onSubmit(newEntry);
+      resetForm();
+    } catch {
+      // Parent component shows the error message.
+    }
+  };
+
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        marginTop: 3,
+        borderRadius: 3,
+        border: "1px dashed",
+        borderColor: "divider",
+        backgroundColor: "rgba(255, 255, 255, 0.72)",
+      }}
+    >
+      <CardContent>
+        <Typography variant="h6" sx={{ fontWeight: 800, marginBottom: 2 }}>
+          New HealthCheck Entry
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ marginBottom: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit}>
+          <TextField
+            label="Date"
+            fullWidth
+            size="small"
+            margin="dense"
+            value={date}
+            onChange={({ target }) => setDate(target.value)}
+          />
+
+          <TextField
+            label="Description"
+            fullWidth
+            size="small"
+            margin="dense"
+            value={description}
+            onChange={({ target }) => setDescription(target.value)}
+          />
+
+          <TextField
+            label="Specialist"
+            fullWidth
+            size="small"
+            margin="dense"
+            value={specialist}
+            onChange={({ target }) => setSpecialist(target.value)}
+          />
+
+          <TextField
+            label="Health Check Rating (0-3)"
+            fullWidth
+            size="small"
+            margin="dense"
+            value={healthCheckRating}
+            onChange={({ target }) => setHealthCheckRating(target.value)}
+          />
+
+          <TextField
+            label="Diagnosis Codes (comma-separated)"
+            fullWidth
+            size="small"
+            margin="dense"
+            value={diagnosisCodes}
+            onChange={({ target }) => setDiagnosisCodes(target.value)}
+          />
+
+          <Stack direction="row" spacing={1} sx={{ marginTop: 2 }}>
+            <Button type="submit" variant="contained">
+              Add
+            </Button>
+            <Button variant="outlined" onClick={handleCancel}>
+              Cancel
+            </Button>
+          </Stack>
+        </Box>
+      </CardContent>
+    </Card>
+  );
+};
+
+const getErrorMessage = (error: unknown): string => {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data;
+
+    if (data && typeof data === "object" && "error" in data) {
+      return "Invalid entry. Please check that all required fields are filled correctly.";
+    }
+
+    if (typeof data === "string") {
+      return data;
+    }
+
+    return "Unrecognized axios error";
+  }
+
+  return "Unknown error";
+};
+
 interface Props {
   diagnoses: Diagnosis[];
 }
@@ -189,6 +348,7 @@ interface Props {
 const PatientPage = ({ diagnoses }: Props) => {
   const { id } = useParams();
   const [patient, setPatient] = useState<Patient | null>(null);
+  const [entryError, setEntryError] = useState<string>();
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -202,6 +362,28 @@ const PatientPage = ({ diagnoses }: Props) => {
 
     void fetchPatient();
   }, [id]);
+
+  const submitNewEntry = async (entry: NewEntry) => {
+    if (!patient) {
+      return;
+    }
+
+    try {
+      const addedEntry = await patientService.addEntry(patient.id, entry);
+
+      setPatient({
+        ...patient,
+        entries: patient.entries
+          ? patient.entries.concat(addedEntry)
+          : [addedEntry],
+      });
+      setEntryError(undefined);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      setEntryError(message);
+      throw error;
+    }
+  };
 
   if (!patient) {
     return (
@@ -313,6 +495,12 @@ const PatientPage = ({ diagnoses }: Props) => {
             <Typography color="text.secondary">No entries yet.</Typography>
           )}
         </Stack>
+
+        <AddHealthCheckEntryForm
+          error={entryError}
+          onCancel={() => setEntryError(undefined)}
+          onSubmit={submitNewEntry}
+        />
       </Box>
     </Box>
   );
