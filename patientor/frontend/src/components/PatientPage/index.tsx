@@ -10,6 +10,7 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  MenuItem,
   Stack,
   TextField,
   Typography,
@@ -21,6 +22,8 @@ import MedicalServicesIcon from "@mui/icons-material/MedicalServices";
 import type { Diagnosis, Entry, NewEntry, Patient } from "../../types";
 import { Gender, HealthCheckRating } from "../../types";
 import patientService from "../../services/patients";
+
+type EntryType = "HealthCheck" | "OccupationalHealthcare" | "Hospital";
 
 const genderSymbol = (gender: Gender): string => {
   switch (gender) {
@@ -186,29 +189,59 @@ const EntryDetails = ({
   );
 };
 
-interface AddHealthCheckEntryFormProps {
+interface AddEntryFormProps {
   error?: string;
   onCancel: () => void;
   onSubmit: (entry: NewEntry) => Promise<void>;
 }
 
-const AddHealthCheckEntryForm = ({
-  error,
-  onCancel,
-  onSubmit,
-}: AddHealthCheckEntryFormProps) => {
+const AddEntryForm = ({ error, onCancel, onSubmit }: AddEntryFormProps) => {
+  const [entryType, setEntryType] = useState<EntryType>("HealthCheck");
+
   const [date, setDate] = useState("");
   const [description, setDescription] = useState("");
   const [specialist, setSpecialist] = useState("");
-  const [healthCheckRating, setHealthCheckRating] = useState("");
   const [diagnosisCodes, setDiagnosisCodes] = useState("");
 
+  const [healthCheckRating, setHealthCheckRating] = useState("");
+  const [employerName, setEmployerName] = useState("");
+  const [sickLeaveStartDate, setSickLeaveStartDate] = useState("");
+  const [sickLeaveEndDate, setSickLeaveEndDate] = useState("");
+  const [dischargeDate, setDischargeDate] = useState("");
+  const [dischargeCriteria, setDischargeCriteria] = useState("");
+
+  const inputSx = {
+    "& .MuiOutlinedInput-root": {
+      borderRadius: 2,
+      backgroundColor: "rgba(255, 255, 255, 0.82)",
+    },
+    "& .MuiInputLabel-root": {
+      fontSize: "0.85rem",
+    },
+    "& .MuiInputBase-input": {
+      fontSize: "0.92rem",
+    },
+  };
+
+  const buttonSx = {
+    borderRadius: 3,
+    paddingX: 3,
+    fontWeight: 800,
+    textTransform: "none",
+  };
+
   const resetForm = () => {
+    setEntryType("HealthCheck");
     setDate("");
     setDescription("");
     setSpecialist("");
-    setHealthCheckRating("");
     setDiagnosisCodes("");
+    setHealthCheckRating("");
+    setEmployerName("");
+    setSickLeaveStartDate("");
+    setSickLeaveEndDate("");
+    setDischargeDate("");
+    setDischargeCriteria("");
   };
 
   const handleCancel = () => {
@@ -216,25 +249,66 @@ const AddHealthCheckEntryForm = ({
     onCancel();
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const codes = diagnosisCodes
+  const createDiagnosisCodes = (): string[] => {
+    return diagnosisCodes
       .split(",")
       .map((code) => code.trim())
       .filter((code) => code.length > 0);
+  };
 
-    const newEntry: NewEntry = {
-      type: "HealthCheck",
+  const createNewEntry = (): NewEntry => {
+    const codes = createDiagnosisCodes();
+
+    const baseEntry = {
       date,
       description,
       specialist,
-      healthCheckRating: Number(healthCheckRating) as HealthCheckRating,
       ...(codes.length > 0 ? { diagnosisCodes: codes } : {}),
     };
 
+    switch (entryType) {
+      case "HealthCheck":
+        return {
+          ...baseEntry,
+          type: "HealthCheck",
+          healthCheckRating: Number(healthCheckRating) as HealthCheckRating,
+        };
+
+      case "OccupationalHealthcare":
+        return {
+          ...baseEntry,
+          type: "OccupationalHealthcare",
+          employerName,
+          ...(sickLeaveStartDate && sickLeaveEndDate
+            ? {
+                sickLeave: {
+                  startDate: sickLeaveStartDate,
+                  endDate: sickLeaveEndDate,
+                },
+              }
+            : {}),
+        };
+
+      case "Hospital":
+        return {
+          ...baseEntry,
+          type: "Hospital",
+          discharge: {
+            date: dischargeDate,
+            criteria: dischargeCriteria,
+          },
+        };
+
+      default:
+        return assertNever(entryType);
+    }
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
     try {
-      await onSubmit(newEntry);
+      await onSubmit(createNewEntry());
       resetForm();
     } catch {
       // Parent component shows the error message.
@@ -246,15 +320,20 @@ const AddHealthCheckEntryForm = ({
       elevation={0}
       sx={{
         marginTop: 3,
-        borderRadius: 3,
-        border: "1px dashed",
+        borderRadius: 4,
+        border: "1px solid",
         borderColor: "divider",
-        backgroundColor: "rgba(255, 255, 255, 0.72)",
+        backgroundColor: "rgba(255, 255, 255, 0.78)",
+        boxShadow: "0 18px 45px rgba(25, 118, 210, 0.08)",
       }}
     >
-      <CardContent>
-        <Typography variant="h6" sx={{ fontWeight: 800, marginBottom: 2 }}>
-          New HealthCheck Entry
+      <CardContent sx={{ padding: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 800, marginBottom: 0.5 }}>
+          New Entry
+        </Typography>
+
+        <Typography color="text.secondary" sx={{ marginBottom: 2 }}>
+          Add a new medical record entry for this patient.
         </Typography>
 
         {error && (
@@ -265,12 +344,30 @@ const AddHealthCheckEntryForm = ({
 
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
+            select
+            label="Entry type"
+            fullWidth
+            size="small"
+            margin="dense"
+            value={entryType}
+            onChange={({ target }) => setEntryType(target.value as EntryType)}
+            sx={inputSx}
+          >
+            <MenuItem value="HealthCheck">Health Check</MenuItem>
+            <MenuItem value="OccupationalHealthcare">
+              Occupational Healthcare
+            </MenuItem>
+            <MenuItem value="Hospital">Hospital</MenuItem>
+          </TextField>
+
+          <TextField
             label="Date"
             fullWidth
             size="small"
             margin="dense"
             value={date}
             onChange={({ target }) => setDate(target.value)}
+            sx={inputSx}
           />
 
           <TextField
@@ -280,6 +377,7 @@ const AddHealthCheckEntryForm = ({
             margin="dense"
             value={description}
             onChange={({ target }) => setDescription(target.value)}
+            sx={inputSx}
           />
 
           <TextField
@@ -289,15 +387,7 @@ const AddHealthCheckEntryForm = ({
             margin="dense"
             value={specialist}
             onChange={({ target }) => setSpecialist(target.value)}
-          />
-
-          <TextField
-            label="Health Check Rating (0-3)"
-            fullWidth
-            size="small"
-            margin="dense"
-            value={healthCheckRating}
-            onChange={({ target }) => setHealthCheckRating(target.value)}
+            sx={inputSx}
           />
 
           <TextField
@@ -307,13 +397,98 @@ const AddHealthCheckEntryForm = ({
             margin="dense"
             value={diagnosisCodes}
             onChange={({ target }) => setDiagnosisCodes(target.value)}
+            sx={inputSx}
           />
 
-          <Stack direction="row" spacing={1} sx={{ marginTop: 2 }}>
-            <Button type="submit" variant="contained">
+          {entryType === "HealthCheck" && (
+            <TextField
+              label="Health Check Rating (0-3)"
+              fullWidth
+              size="small"
+              margin="dense"
+              value={healthCheckRating}
+              onChange={({ target }) => setHealthCheckRating(target.value)}
+              sx={inputSx}
+            />
+          )}
+
+          {entryType === "OccupationalHealthcare" && (
+            <>
+              <TextField
+                label="Employer Name"
+                fullWidth
+                size="small"
+                margin="dense"
+                value={employerName}
+                onChange={({ target }) => setEmployerName(target.value)}
+                sx={inputSx}
+              />
+
+              <TextField
+                label="Sick Leave Start Date"
+                fullWidth
+                size="small"
+                margin="dense"
+                value={sickLeaveStartDate}
+                onChange={({ target }) => setSickLeaveStartDate(target.value)}
+                sx={inputSx}
+              />
+
+              <TextField
+                label="Sick Leave End Date"
+                fullWidth
+                size="small"
+                margin="dense"
+                value={sickLeaveEndDate}
+                onChange={({ target }) => setSickLeaveEndDate(target.value)}
+                sx={inputSx}
+              />
+            </>
+          )}
+
+          {entryType === "Hospital" && (
+            <>
+              <TextField
+                label="Discharge Date"
+                fullWidth
+                size="small"
+                margin="dense"
+                value={dischargeDate}
+                onChange={({ target }) => setDischargeDate(target.value)}
+                sx={inputSx}
+              />
+
+              <TextField
+                label="Discharge Criteria"
+                fullWidth
+                size="small"
+                margin="dense"
+                value={dischargeCriteria}
+                onChange={({ target }) => setDischargeCriteria(target.value)}
+                sx={inputSx}
+              />
+            </>
+          )}
+
+          <Stack direction="row" spacing={1.5} sx={{ marginTop: 2 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              sx={{
+                ...buttonSx,
+                background:
+                  "linear-gradient(135deg, rgba(25, 118, 210, 0.95), rgba(156, 39, 176, 0.85))",
+                boxShadow: "0 10px 24px rgba(25, 118, 210, 0.18)",
+                "&:hover": {
+                  background:
+                    "linear-gradient(135deg, rgba(21, 101, 192, 1), rgba(123, 31, 162, 0.95))",
+                },
+              }}
+            >
               Add
             </Button>
-            <Button variant="outlined" onClick={handleCancel}>
+
+            <Button variant="outlined" onClick={handleCancel} sx={buttonSx}>
               Cancel
             </Button>
           </Stack>
@@ -496,7 +671,7 @@ const PatientPage = ({ diagnoses }: Props) => {
           )}
         </Stack>
 
-        <AddHealthCheckEntryForm
+        <AddEntryForm
           error={entryError}
           onCancel={() => setEntryError(undefined)}
           onSubmit={submitNewEntry}
