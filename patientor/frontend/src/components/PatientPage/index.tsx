@@ -61,7 +61,7 @@ const healthCheckRatingEmoji = (rating: HealthCheckRating): string => {
     case HealthCheckRating.LowRisk:
       return "🙂";
     case HealthCheckRating.HighRisk:
-      return "😬";
+      return "🤒";
     case HealthCheckRating.CriticalRisk:
       return "💀";
     default:
@@ -214,7 +214,7 @@ const AddEntryForm = ({
   const [specialist, setSpecialist] = useState("");
   const [diagnosisCodes, setDiagnosisCodes] = useState<string[]>([]);
 
-  const [healthCheckRating, setHealthCheckRating] = useState("");
+  const [healthCheckRating, setHealthCheckRating] = useState("0");
   const [employerName, setEmployerName] = useState("");
   const [sickLeaveStartDate, setSickLeaveStartDate] = useState("");
   const [sickLeaveEndDate, setSickLeaveEndDate] = useState("");
@@ -251,12 +251,12 @@ const AddEntryForm = ({
     },
   };
 
-  const resetForm = () => {
+  const resetForm = (type: EntryType = entryType) => {
     setDate("");
     setDescription("");
     setSpecialist("");
     setDiagnosisCodes([]);
-    setHealthCheckRating("");
+    setHealthCheckRating(type === "HealthCheck" ? "0" : "");
     setEmployerName("");
     setSickLeaveStartDate("");
     setSickLeaveEndDate("");
@@ -266,11 +266,11 @@ const AddEntryForm = ({
 
   const handleEntryTypeChange = (type: EntryType) => {
     setEntryType(type);
-    resetForm();
+    resetForm(type);
   };
 
   const handleCancel = () => {
-    resetForm();
+    resetForm("HealthCheck");
     setEntryType("HealthCheck");
     onCancel();
   };
@@ -295,14 +295,8 @@ const AddEntryForm = ({
         return {
           ...baseEntry,
           type: "HealthCheck",
-          ...(healthCheckRating !== ""
-            ? {
-                healthCheckRating: Number(
-                  healthCheckRating,
-                ) as HealthCheckRating,
-              }
-            : {}),
-        } as NewEntry;
+          healthCheckRating: Number(healthCheckRating) as HealthCheckRating,
+        };
 
       case "OccupationalHealthcare":
         return {
@@ -470,7 +464,7 @@ const AddEntryForm = ({
             >
               <MenuItem value="0">0 — Healthy 😎</MenuItem>
               <MenuItem value="1">1 — Low Risk 🙂</MenuItem>
-              <MenuItem value="2">2 — High Risk 😬</MenuItem>
+              <MenuItem value="2">2 — High Risk 🤒</MenuItem>
               <MenuItem value="3">3 — Critical Risk 💀</MenuItem>
             </TextField>
           )}
@@ -593,6 +587,7 @@ const PatientPage = ({ diagnoses }: Props) => {
   const { id } = useParams();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [entryError, setEntryError] = useState<string>();
+  const [entryFormVisible, setEntryFormVisible] = useState(false);
 
   useEffect(() => {
     const fetchPatient = async () => {
@@ -622,11 +617,28 @@ const PatientPage = ({ diagnoses }: Props) => {
           : [addedEntry],
       });
       setEntryError(undefined);
+      setEntryFormVisible(false);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       setEntryError(message);
       throw error;
     }
+  };
+
+  const addEntryButtonSx = {
+    marginTop: 3,
+    borderRadius: 3,
+    paddingX: 3,
+    paddingY: 1,
+    fontWeight: 800,
+    textTransform: "none",
+    background:
+      "linear-gradient(135deg, rgba(25, 118, 210, 0.95), rgba(156, 39, 176, 0.85))",
+    boxShadow: "0 10px 24px rgba(25, 118, 210, 0.18)",
+    "&:hover": {
+      background:
+        "linear-gradient(135deg, rgba(21, 101, 192, 1), rgba(123, 31, 162, 0.95))",
+    },
   };
 
   if (!patient) {
@@ -668,10 +680,6 @@ const PatientPage = ({ diagnoses }: Props) => {
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 800 }}>
                 {patient.name}
-              </Typography>
-
-              <Typography color="text.secondary" sx={{ marginTop: 0.5 }}>
-                {patient.occupation}
               </Typography>
             </Box>
 
@@ -740,12 +748,25 @@ const PatientPage = ({ diagnoses }: Props) => {
           )}
         </Stack>
 
-        <AddEntryForm
-          diagnoses={diagnoses}
-          error={entryError}
-          onCancel={() => setEntryError(undefined)}
-          onSubmit={submitNewEntry}
-        />
+        {entryFormVisible ? (
+          <AddEntryForm
+            diagnoses={diagnoses}
+            error={entryError}
+            onCancel={() => {
+              setEntryError(undefined);
+              setEntryFormVisible(false);
+            }}
+            onSubmit={submitNewEntry}
+          />
+        ) : (
+          <Button
+            variant="contained"
+            sx={addEntryButtonSx}
+            onClick={() => setEntryFormVisible(true)}
+          >
+            Add New Entry
+          </Button>
+        )}
       </Box>
     </Box>
   );
